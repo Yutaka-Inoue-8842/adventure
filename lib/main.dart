@@ -1,113 +1,236 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+
+const Color kAccentColor = Color(0xFFFFFFFF);
+const Color kBackgroundColor = Color(0xFF000000);
+const Color kTextColorPrimary = Color(0xFF000000);
+const Color kTextColorSecondary = Color(0xFFB0BEC5);
+const Color kButtonColorPrimary = Color(0xFFECEFF1);
+const Color kButtonTextColorPrimary = Color(0xFF455A64);
+const Color kIconColor = Color(0xFF455A64);
 
 void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
+      theme: ThemeData.dark().copyWith(
+        accentColor: kAccentColor,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: WelcomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+/* ----- Welcomeページ ----- */
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class WelcomePage extends StatelessWidget {
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: kBackgroundColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              _Header(),
+              Padding(
+                padding: const EdgeInsets.only(top: 80, left: 30, right: 30),
+                child: _SignInForm(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+/* ----- ヘッダー関連 ----- */
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+class _HeaderCurveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    return Path()
+      ..lineTo(0, size.height * 1)
+      ..quadraticBezierTo(
+        size.width * 0.5,
+        size.height * 0.5,
+        size.width * 1,
+        size.height * 1,
+      )
+      ..lineTo(size.width, 1)
+      ..close();
   }
 
   @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) {
+    return true;
+  }
+}
+
+class _HeaderBackground extends StatelessWidget {
+  final double height;
+
+  const _HeaderBackground({
+    Key key,
+    @required this.height,
+  }) : super(key: key);
+
+  @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
+    return ClipPath(
+      clipper: _HeaderCurveClipper(),
+      child: Container(
+        width: double.infinity,
+        height: height,
+        decoration: BoxDecoration(
+          color:  Color(0xFFFFFFFF),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+class _HeaderTitle extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Adventure',
+          style: Theme.of(context).textTheme.headline2.copyWith(
+                color: kTextColorPrimary,
+                fontWeight: FontWeight.w900,
+              ),
+        ),
+        SizedBox(height: 4),
+      ],
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final double height = 320;
+    return Container(
+      height: height,
+      child: Stack(
+        children: [
+          Align(
+            alignment: Alignment.topCenter,
+            child: _HeaderBackground(height: height),
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: EdgeInsets.only(top: 128),
+              child: _HeaderTitle(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* ----- SignInフォーム関連 ----- */
+
+class _CustomTextField extends StatelessWidget {
+  final String labelText;
+  final String hintText;
+  final bool obscureText;
+
+  const _CustomTextField({
+    Key key,
+    @required this.labelText,
+    @required this.hintText,
+    @required this.obscureText,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      decoration: InputDecoration(
+        labelText: labelText,
+        hintText: hintText,
+        hintStyle: TextStyle(color: kTextColorSecondary),
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: kAccentColor,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: kTextColorSecondary,
+          ),
+        ),
+      ),
+      obscureText: obscureText,
+      onTap: () {},
+    );
+  }
+}
+
+class _SignInForm extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _CustomTextField(
+          labelText: 'Email',
+          hintText: '',
+          obscureText: false,
+        ),
+        SizedBox(height: 48),
+        _CustomTextField(
+          labelText: 'Password',
+          hintText: '',
+          obscureText: true,
+        ),
+        SizedBox(height: 48),
+        Container(
+          width: double.infinity,
+          child: TextButton(
+            style: TextButton.styleFrom(
+              primary: kButtonTextColorPrimary,
+              backgroundColor: kButtonColorPrimary,
+              padding: EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () {},
+            child: Text(
+              'Sign in',
+              style: Theme.of(context)
+                  .textTheme
+                  .button
+                  .copyWith(color: kButtonTextColorPrimary, fontSize: 18),
+            ),
+          ),
+        ),
+        TextButton(
+          child:  Text('Sign up'),
+          style: TextButton.styleFrom(
+          primary: Colors.white,
+          ),
+          onPressed: () {},
+        ),
+      ],
     );
   }
 }
