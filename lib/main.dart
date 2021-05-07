@@ -3,234 +3,197 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import './top_page.dart'; 
 
-const Color kAccentColor = Color(0xFFFFFFFF);
-const Color kBackgroundColor = Color(0xFF000000);
-const Color kTextColorPrimary = Color(0xFF000000);
-const Color kTextColorSecondary = Color(0xFFB0BEC5);
-const Color kButtonColorPrimary = Color(0xFFECEFF1);
-const Color kButtonTextColorPrimary = Color(0xFF455A64);
-const Color kIconColor = Color(0xFF455A64);
+class UserState extends ChangeNotifier {
+  User user;
 
-void main() {
+  void setUser(User newUser) {
+    user = newUser;
+    notifyListeners();
+  }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // new
+  //最初に表示するwidget
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  final UserState userState = UserState();
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: ThemeData.dark().copyWith(
-        accentColor: kAccentColor,
+    return ChangeNotifierProvider<UserState>(
+      create: (context) => UserState(),
+      child: MaterialApp(
+        title: 'adventure',
+        home: LoginPage(),
       ),
-      home: WelcomePage(),
     );
   }
 }
 
-/* ----- Welcomeページ ----- */
-
-class WelcomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
+class LoginPage extends StatelessWidget {
+   @override
+  Widget build(BuildContext context){
     return Scaffold(
-      backgroundColor: kBackgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _Header(),
-              Padding(
-                padding: const EdgeInsets.only(top: 80, left: 30, right: 30),
-                child: _SignInForm(),
-              ),
-            ],
-          ),
+        child: Column(
+          children: [
+            Haeder(),
+            Body(),
+          ]
         ),
       ),
     );
   }
 }
 
-/* ----- ヘッダー関連 ----- */
 
-class _HeaderCurveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    return Path()
-      ..lineTo(0, size.height * 1)
-      ..quadraticBezierTo(
-        size.width * 0.5,
-        size.height * 0.5,
-        size.width * 1,
-        size.height * 1,
-      )
-      ..lineTo(size.width, 1)
-      ..close();
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) {
-    return true;
-  }
-}
-
-class _HeaderBackground extends StatelessWidget {
-  final double height;
-
-  const _HeaderBackground({
-    Key key,
-    @required this.height,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipPath(
-      clipper: _HeaderCurveClipper(),
-      child: Container(
-        width: double.infinity,
-        height: height,
-        decoration: BoxDecoration(
-          color:  Color(0xFFFFFFFF),
-        ),
-      ),
-    );
-  }
-}
-
-class _HeaderTitle extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'Adventure',
-          style: Theme.of(context).textTheme.headline2.copyWith(
-                color: kTextColorPrimary,
-                fontWeight: FontWeight.w900,
-              ),
-        ),
-        SizedBox(height: 4),
-      ],
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final double height = 320;
+class Haeder extends StatelessWidget {
+   @override
+  Widget build(BuildContext context){   
     return Container(
-      height: height,
-      child: Stack(
-        children: [
-          Align(
-            alignment: Alignment.topCenter,
-            child: _HeaderBackground(height: height),
+      height: 300,
+      padding: EdgeInsets.only(top: 130),
+      child: Text(
+        'Adventure',
+        style: TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.w900,
+          fontSize: 50,
+        ),
+      ),
+    );
+  }
+}
+
+
+class Body extends StatefulWidget {
+  @override
+  _BodyState createState() => _BodyState();
+}
+
+class _BodyState extends State<Body> {
+    String email = '';
+    String password = '';
+    String error = '';
+    @override
+  Widget build(BuildContext context){
+    final UserState userState = Provider.of<UserState>(context);
+    return Container(
+      padding: EdgeInsets.only(left: 30, right: 30),
+      child: Column(
+        children: <Widget>[
+          TextFormField(
+            onChanged: (String value) {
+              setState(() {
+              email = value;
+              });
+            },
+            decoration: InputDecoration(
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              labelText: 'Email',
+              border: OutlineInputBorder(
+              ),
+            ),
           ),
-          Align(
-            alignment: Alignment.topCenter,
-            child: Padding(
-              padding: EdgeInsets.only(top: 128),
-              child: _HeaderTitle(),
+          SizedBox(height: 50),
+          TextFormField(
+            onChanged: (String value) {
+              setState(() {
+              password = value;
+              });
+            },
+            obscureText: true,
+            decoration: InputDecoration(
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              labelText: 'Password',
+              border: OutlineInputBorder(
+              ),
+            ),
+          ),
+                        Container(
+                padding: EdgeInsets.all(8),
+                // メッセージ表示
+                child: Text(error),
+              ),
+          SizedBox(height: 50),
+          TextButton(
+            style: TextButton.styleFrom(
+                backgroundColor: Colors.black,
+                padding: EdgeInsets.only(top: 15, right: 40, bottom: 15, left: 40),
+            ),
+            onPressed: () async {
+              try {
+                // メール/パスワードでログイン
+                final FirebaseAuth auth = FirebaseAuth.instance;
+                final result = await auth.signInWithEmailAndPassword(
+                  email: email,
+                  password: password,
+                );
+                // ユーザー情報を更新
+                userState.setUser(result.user);
+                // ログインに成功した場合
+                // チャット画面に遷移＋ログイン画面を破棄
+                await Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) {
+                    return TopPage();
+                  }),
+                );
+              } catch (e) { 
+                                     // ユーザー登録に失敗した場合
+                      setState(() {
+                        error = "ログインに失敗しました：${e.toString()}";
+                      });
+                  // ログインに失敗した場合
+                }
+            },
+            child: Text(
+              'Sign in',
+              style: TextStyle(
+                fontSize: 20,
+                color: Colors.white
+              ),
+            ),
+          ),
+          SizedBox(height: 25),
+          TextButton( 
+            onPressed: () async {
+              try {
+                // メール/パスワードでログイン
+                final FirebaseAuth auth = FirebaseAuth.instance;
+                final result = await auth.createUserWithEmailAndPassword(
+                  email: email,
+                  password: password,
+                );
+                // ユーザー情報を更新
+                userState.setUser(result.user);
+                // ログインに成功した場合
+                // チャット画面に遷移＋ログイン画面を破棄
+                await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) {
+                    return TopPage();
+                  })
+                );
+              } catch (e) { 
+                                      setState(() {
+                        error = "登録に失敗しました：${e.toString()}";
+                      });
+                  // ログインに失敗した場合
+                }
+            },
+            child: Text(
+              'Sign up',
+                style: TextStyle(
+                color: Colors.black
+              ),
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-/* ----- SignInフォーム関連 ----- */
-
-class _CustomTextField extends StatelessWidget {
-  final String labelText;
-  final String hintText;
-  final bool obscureText;
-
-  const _CustomTextField({
-    Key key,
-    @required this.labelText,
-    @required this.hintText,
-    @required this.obscureText,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      decoration: InputDecoration(
-        labelText: labelText,
-        hintText: hintText,
-        hintStyle: TextStyle(color: kTextColorSecondary),
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-            color: kAccentColor,
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-            color: kTextColorSecondary,
-          ),
-        ),
-      ),
-      obscureText: obscureText,
-      onTap: () {},
-    );
-  }
-}
-
-class _SignInForm extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _CustomTextField(
-          labelText: 'Email',
-          hintText: '',
-          obscureText: false,
-        ),
-        SizedBox(height: 48),
-        _CustomTextField(
-          labelText: 'Password',
-          hintText: '',
-          obscureText: true,
-        ),
-        SizedBox(height: 48),
-        Container(
-          width: double.infinity,
-          child: TextButton(
-            style: TextButton.styleFrom(
-              primary: kButtonTextColorPrimary,
-              backgroundColor: kButtonColorPrimary,
-              padding: EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () {},
-            child: Text(
-              'Sign in',
-              style: Theme.of(context)
-                  .textTheme
-                  .button
-                  .copyWith(color: kButtonTextColorPrimary, fontSize: 18),
-            ),
-          ),
-        ),
-        TextButton(
-          child:  Text('Sign up'),
-          style: TextButton.styleFrom(
-          primary: Colors.white,
-          ),
-          onPressed: () {},
-        ),
-      ],
     );
   }
 }
