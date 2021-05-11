@@ -3,25 +3,27 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import './top_page.dart'; 
 
-class UserState extends ChangeNotifier {
+
+class UserState extends ChangeNotifier{
   User user;
-
-  void setUser(User newUser) {
-    user = newUser;
+  void setUser(User currentUser){
+    user = currentUser;
     notifyListeners();
   }
 }
 
+
+
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // new
-  //最初に表示するwidget
-  runApp(MyApp());
+  await Firebase.initializeApp();
+  runApp(Myapp());
 }
 
-class MyApp extends StatelessWidget {
+
+class Myapp extends StatelessWidget {
   final UserState userState = UserState();
   @override
   Widget build(BuildContext context) {
@@ -29,13 +31,66 @@ class MyApp extends StatelessWidget {
       create: (context) => UserState(),
       child: MaterialApp(
         title: 'adventure',
-        home: LoginPage(),
+        home: LoginCheck(),
       ),
     );
   }
 }
 
-class LoginPage extends StatelessWidget {
+// ログインチェック
+
+class LoginCheck extends StatefulWidget{
+  LoginCheck({Key key}) : super(key: key);
+
+  @override
+  _LoginCheckState createState() => _LoginCheckState();
+
+}
+
+class _LoginCheckState extends State<LoginCheck>{
+  //ログイン状態のチェック(非同期で行う)
+  void checkUser() async{
+    final currentUser = await FirebaseAuth.instance.currentUser;
+    final userState = Provider.of<UserState>(context,listen: false);
+    if(currentUser == null){
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) {
+            return Login();
+          }),
+        );
+    }else{
+      userState.setUser(currentUser);
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) {
+          return Destination();
+        }),
+      );
+    }
+  }
+
+  @override
+  void initState(){
+    super.initState();
+    checkUser();
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Container(
+          child: Text("Loading..."),
+        ),
+      ),
+    );
+  }
+}
+
+
+//ログインページ
+
+
+
+class Login extends StatelessWidget {
    @override
   Widget build(BuildContext context){
     return Scaffold(
@@ -115,11 +170,10 @@ class _BodyState extends State<Body> {
               ),
             ),
           ),
-                        Container(
-                padding: EdgeInsets.all(8),
-                // メッセージ表示
-                child: Text(error),
-              ),
+          Container(
+            padding: EdgeInsets.all(8),
+            child: Text(error),
+            ),
           SizedBox(height: 50),
           TextButton(
             style: TextButton.styleFrom(
@@ -128,27 +182,21 @@ class _BodyState extends State<Body> {
             ),
             onPressed: () async {
               try {
-                // メール/パスワードでログイン
                 final FirebaseAuth auth = FirebaseAuth.instance;
                 final result = await auth.signInWithEmailAndPassword(
                   email: email,
                   password: password,
                 );
-                // ユーザー情報を更新
                 userState.setUser(result.user);
-                // ログインに成功した場合
-                // チャット画面に遷移＋ログイン画面を破棄
-                await Navigator.of(context).pushReplacement(
+                await Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) {
-                    return TopPage();
+                    return Destination();
                   }),
                 );
               } catch (e) { 
-                                     // ユーザー登録に失敗した場合
-                      setState(() {
-                        error = "ログインに失敗しました：${e.toString()}";
-                      });
-                  // ログインに失敗した場合
+                  setState(() {
+                    error = e.toString();
+                  });
                 }
             },
             child: Text(
@@ -163,26 +211,21 @@ class _BodyState extends State<Body> {
           TextButton( 
             onPressed: () async {
               try {
-                // メール/パスワードでログイン
                 final FirebaseAuth auth = FirebaseAuth.instance;
                 final result = await auth.createUserWithEmailAndPassword(
                   email: email,
                   password: password,
                 );
-                // ユーザー情報を更新
                 userState.setUser(result.user);
-                // ログインに成功した場合
-                // チャット画面に遷移＋ログイン画面を破棄
                 await Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) {
-                    return TopPage();
+                    return Destination();
                   })
                 );
               } catch (e) { 
-                                      setState(() {
-                        error = "登録に失敗しました：${e.toString()}";
-                      });
-                  // ログインに失敗した場合
+                  setState(() {
+                  error = e.toString();
+                  });
                 }
             },
             child: Text(
@@ -193,6 +236,218 @@ class _BodyState extends State<Body> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+
+
+
+class Destination extends StatelessWidget {
+   @override
+  Widget build(BuildContext context){
+    final UserState userState = Provider.of<UserState>(context);
+    final User user = userState.user;
+    
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+        title: Text(
+          'Destination',
+          style: TextStyle(
+            color: Colors.black
+          ),
+        ),
+        backgroundColor: Colors.white,
+        ),
+        body: Grid(),
+      ),
+    );
+  }
+}
+
+class Grid extends StatelessWidget {
+
+  @override
+  Widget build(BuildContext context){
+    return Container(
+      child: GridView.count(
+        crossAxisCount: 2,
+        crossAxisSpacing: 5,
+        mainAxisSpacing: 5,
+        shrinkWrap: true,
+        padding: const EdgeInsets.all(8.0),
+        children:[
+          Container(
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                Opacity(
+                  opacity: 0.8,
+                  child: Image.asset('images/aurora.jpg', fit: BoxFit.cover,)
+                ),
+                Center(
+                  child: Text(
+                    'Aurora',
+                    style: TextStyle(
+                    fontSize: 30,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ]
+            )
+          ),
+          Container(
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                Opacity(
+                  opacity: 0.8,
+                  child: Image.asset('images/volcano.jpeg', fit: BoxFit.cover,)
+                ),
+                Center(
+                  child: Text(
+                    'Volcano',
+                    style: TextStyle(
+                    fontSize: 30,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ]
+            )
+          ),
+          Container(
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                Opacity(
+                  opacity: 0.8,
+                  child: Image.asset('images/desert.jpeg', fit: BoxFit.cover,)
+                ),
+                Center(
+                  child: Text(
+                    'Desert',
+                    style: TextStyle(
+                    fontSize: 30,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ]
+            )
+          ),
+          Container(
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                Opacity(
+                  opacity: 0.8,
+                  child: Image.asset('images/jungle.jpeg', fit: BoxFit.cover,)
+                ),
+                Center(
+                  child: Text(
+                    'Jungle',
+                    style: TextStyle(
+                    fontSize: 30,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ]
+            )
+          ),
+          Container(
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                Opacity(
+                  opacity: 0.8,
+                  child: Image.asset('images/snow mountain.jpeg', fit: BoxFit.cover,)
+                ),
+                Center(
+                  child: Text(
+                    'Snow\nMountain',
+                    style: TextStyle(
+                    fontSize: 30,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ]
+            )
+          ),
+          Container(
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                Opacity(
+                  opacity: 0.8,
+                  child: Image.asset('images/permafrost.jpg', fit: BoxFit.cover,)
+                ),
+                Center(
+                  child: Text(
+                    'Permafrost',
+                    style: TextStyle(
+                    fontSize: 30,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ]
+            )
+          ),
+          Container(
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                Opacity(
+                  opacity: 0.8,
+                  child: Image.asset('images/deep sea.jpeg', fit: BoxFit.cover,)
+                ),
+                Center(
+                  child: Text(
+                    'Deep sea',
+                    style: TextStyle(
+                    fontSize: 30,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ]
+            )
+          ),
+          Container(
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                Opacity(
+                  opacity: 0.8,
+                  child: Image.asset('images/earth.webp', fit: BoxFit.cover,)
+                ),
+                Center(
+                  child: Text(
+                    'Other',
+                    style: TextStyle(
+                    fontSize: 30,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ]
+            )
+          ),
+        ]
       ),
     );
   }
