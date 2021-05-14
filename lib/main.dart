@@ -302,6 +302,11 @@ var _hasPadding = false;
                 }),
               );
             },
+                              onTapCancel: () {
+          setState(() {
+            _hasPadding = false;
+          });
+        },
             child: Container(
               child: Stack(
                 fit: StackFit.expand,
@@ -979,7 +984,6 @@ class _AddRoomState extends State<AddRoom> {
                       'budget': budget,
                       'contents': contents,
                         });
-                    // 1つ前の画面に戻る
                     Navigator.of(context).pop();
                   },
                 ),
@@ -991,7 +995,6 @@ class _AddRoomState extends State<AddRoom> {
     );
   }
 }
-
 
 class Top extends StatelessWidget {
   @override
@@ -1033,64 +1036,137 @@ class Top extends StatelessWidget {
   }
 }
 
-class JoinRoom extends StatelessWidget {
+class JoinRoom extends StatefulWidget {
+    @override
+  JoinRoomState createState() => JoinRoomState();
+}
+
+class JoinRoomState extends State<JoinRoom> {
+
+  String message = '';
+
   @override
   Widget build(BuildContext context) {
+    final UserState userState = Provider.of<UserState>(context);
+    final User user = userState.user;
+      final TextEditingController _textEditingController = new TextEditingController();
     return Scaffold(
-        body:  SafeArea(
-        child:  GestureDetector( 
-                      onTap: ()async{
+      body: Column(
+        children: [
+          GestureDetector( 
+            onTap: ()async{
               await Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) {
                   return JoinDetail();
                 }),
               );
             },
-        child: Container(
-                    height: 150,
-            margin: EdgeInsets.only(top: 20, left: 20,right: 20),
-          child:Stack(
-            fit: StackFit.expand,
-            children: [
+            child: Container(
+              height: 150,
+              margin: EdgeInsets.only(top: 20, left: 20,right: 20),
+              child:Stack(
+                fit: StackFit.expand,
+                children: [
                   Opacity(
-                  opacity: 0.8,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.asset('images/aurora.jpg', fit: BoxFit.cover,)
+                    opacity: 0.8,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset('images/aurora.jpg', fit: BoxFit.cover,)
+                    ),
                   ),
-                ),
-             StreamBuilder (
-              stream: FirebaseFirestore.instance.collection('aurora rooms').doc('tu5gcNAWOh9EHYUSXS3M').snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Text('Something went wrong');
-                }
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Text('Loading');
-                }
-                  return  Center(
-                      child:  
-                        Text(
-                          snapshot.data['title'],
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 40,
+                  StreamBuilder (
+                    stream: FirebaseFirestore.instance.collection('aurora rooms').doc('tu5gcNAWOh9EHYUSXS3M').snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Text('Something went wrong');
+                      }
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Text('Loading');
+                      }
+                        return  Center(
+                          child:  Text(
+                            snapshot.data['title'],
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 40,
+                            ),
                           ),
-                        ),
-                  );
-                },
-              
+                        );
+                      },
+                    ),
+                  ]
+                ),
               ),
-            ]
-          ),
+            ),
+               Expanded(
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+    Container(
+              padding: EdgeInsets.all(5.0),
+              child: Text(
+                "Test",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+             Container(
+              padding: EdgeInsets.all(5.0),
+              child: Text(
+                "Test",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
         ),
       ),
-        ),
+    ),
+SafeArea(
+  child: Container(
+    margin: EdgeInsets.all(20),
+    child: Row(
+      children: [
+         Flexible(
+    child: TextField(
+    controller: _textEditingController,
+      autofocus: true,
+      style: TextStyle(
+        fontSize: 20.0,
+        color: Colors.black,
+      ),
+      decoration: InputDecoration(
+        hintText: 'Message',
+      ),
+    ),
+         ),
+    IconButton(      icon: Icon(
+        Icons.send,
+        color: Colors.black
+    
+      ), onPressed: () async {
+                            final date =
+                        DateTime.now().toLocal().toIso8601String(); // 現在の日時
+                    final email = user.email; 
+                    await FirebaseFirestore.instance
+                        .collection('aurora rooms/tu5gcNAWOh9EHYUSXS3M/messages')
+                        .doc()
+                        .set({
+                          'date': date,
+                          'email': email,
+                      'message': _textEditingController.text,
+                        });
+  _textEditingController.clear();
+      }
+      )
+    ]
+    ),
+  ),
+),
+        ]
+      ),
     );
-
   }
-  }
+}
 
 class JoinDetail extends StatelessWidget {
   @override
@@ -1112,7 +1188,7 @@ class JoinDetail extends StatelessWidget {
       onPressed: () async {
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) {
-          return Room();
+          return Top();
           }),
         );
        },
@@ -1298,29 +1374,6 @@ class JoinDetail extends StatelessWidget {
                   },
                 ),
               ),
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            Container(
-              width: double.infinity,
-              margin: EdgeInsets.only(left: 20, right: 20),
-            child: ElevatedButton(
-              child: Text(
-                'Joining',
-              ),
-              style: ElevatedButton.styleFrom(
-                primary: Colors.black,
-                onPrimary: Colors.white,
-              ),
-              onPressed: () async{
-                await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) {
-                    return Top();
-                  }),
-                );
-              },
-            ),
             ),
           ],
         ),
