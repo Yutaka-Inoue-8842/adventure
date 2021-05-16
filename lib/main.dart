@@ -3,7 +3,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/src/widgets/text.dart';
 
 
 
@@ -14,8 +13,6 @@ class UserState extends ChangeNotifier{
     notifyListeners();
   }
 }
-
-
 
 
 void main() async {
@@ -298,7 +295,7 @@ var _hasPadding = false;
             onTap: ()async{
               await Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) {
-                  return Room();
+                  return Room('aurora');
                 }),
               );
             },
@@ -341,7 +338,7 @@ var _hasPadding = false;
                   opacity: 0.8,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.asset('images/volcano.jpeg', fit: BoxFit.cover,)
+                    child: Image.asset('images/volcano.jpg', fit: BoxFit.cover,)
                   ),
                 ),
                 Center(
@@ -365,7 +362,7 @@ var _hasPadding = false;
                   opacity: 0.8,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.asset('images/desert.jpeg', fit: BoxFit.cover,)
+                    child: Image.asset('images/desert.jpg', fit: BoxFit.cover,)
                   ),
                 ),
                 Center(
@@ -389,7 +386,7 @@ var _hasPadding = false;
                   opacity: 0.8,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.asset('images/jungle.jpeg', fit: BoxFit.cover,)
+                    child: Image.asset('images/jungle.jpg', fit: BoxFit.cover,)
                   ),
                 ),
                 Center(
@@ -413,7 +410,7 @@ var _hasPadding = false;
                   opacity: 0.8,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.asset('images/snow mountain.jpeg', fit: BoxFit.cover,)
+                    child: Image.asset('images/snow mountain.jpg', fit: BoxFit.cover,)
                   ),
                 ),
                 Center(
@@ -461,7 +458,7 @@ var _hasPadding = false;
                   opacity: 0.8,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.asset('images/deep sea.jpeg', fit: BoxFit.cover,)
+                    child: Image.asset('images/deep sea.jpg', fit: BoxFit.cover,)
                   ),
                 ),
                 Center(
@@ -485,7 +482,7 @@ var _hasPadding = false;
                   opacity: 0.8,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.asset('images/earth.webp', fit: BoxFit.cover,)
+                    child: Image.asset('images/earth.jpg', fit: BoxFit.cover,)
                   ),
                 ),
                 Center(
@@ -510,6 +507,8 @@ var _hasPadding = false;
 
 
 class Room extends StatelessWidget {
+    Room(this.roomname);
+  String roomname;
    @override
   Widget build(BuildContext context){
     final UserState userState = Provider.of<UserState>(context);
@@ -537,14 +536,14 @@ class Room extends StatelessWidget {
         ),       
         backgroundColor: Colors.white,
         ),
-        body: RoomList(),
+        body: RoomList(roomname),
         floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.black,
         child: Icon(Icons.add),
         onPressed: () async {
           await Navigator.of(context).push(
             MaterialPageRoute(builder: (context) {
-              return AddRoom();
+              return AddRoom(roomname);
             }),
           );
         },
@@ -555,12 +554,14 @@ class Room extends StatelessWidget {
 }
 
 class RoomList extends StatelessWidget {
+      RoomList(this.roomname);
+  String roomname;
   @override
   Widget build(BuildContext context){
   final UserState userState = Provider.of<UserState>(context);
   final User user = userState.user;
 
-    CollectionReference aurora = FirebaseFirestore.instance.collection('aurora rooms');
+    CollectionReference aurora = FirebaseFirestore.instance.collection(roomname);
     return StreamBuilder<QuerySnapshot>(
       stream: aurora.snapshots(),
       builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -573,14 +574,14 @@ class RoomList extends StatelessWidget {
         }
 
 
-
- return  ListView(
-          children:  snapshot.data.docs.map((DocumentSnapshot document) {
+ return  ListView.builder(
+        itemCount: snapshot.data.docs.length,
+        itemBuilder: (context, index) {
             return GestureDetector( 
               onTap: ()async{
                 await Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) {
-                    return Detail();
+                    return Detail(roomname,snapshot.data.docs[index].id);
                   }),
                 );
               },
@@ -595,7 +596,7 @@ class RoomList extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text( 
-                        document.data()['title']??'default value',
+                      snapshot.data.docs[index].data()['title']??'',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -603,7 +604,7 @@ class RoomList extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        document.data()['description']??'default value',
+                        snapshot.data.docs[index].data()['description']??'',
                         style: TextStyle(fontSize: 20),
                       ),
                     ],
@@ -611,7 +612,7 @@ class RoomList extends StatelessWidget {
                 ),
               ),
             );
-          }).toList(),
+          },
         );
       },
     );
@@ -621,6 +622,9 @@ class RoomList extends StatelessWidget {
 
 
 class Detail extends StatelessWidget {
+  Detail(this.roomname, this.id);
+  String roomname;
+  String id;
   @override
   Widget build(BuildContext context){
   return Scaffold(
@@ -640,7 +644,7 @@ class Detail extends StatelessWidget {
       onPressed: () async {
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) {
-          return Room();
+          return Room(roomname);
           }),
         );
        },
@@ -660,7 +664,7 @@ class Detail extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: StreamBuilder (
-              stream: FirebaseFirestore.instance.collection('aurora rooms').doc('tu5gcNAWOh9EHYUSXS3M').snapshots(),
+              stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Text('Something went wrong');
@@ -680,7 +684,7 @@ class Detail extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          snapshot.data['title'],
+                          snapshot.data['title']??'',
                           style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.w900,
@@ -704,7 +708,7 @@ class Detail extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child:  StreamBuilder(
-              stream: FirebaseFirestore.instance.collection('aurora rooms').doc('tu5gcNAWOh9EHYUSXS3M').snapshots(),
+              stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Text('Something went wrong');
@@ -724,7 +728,7 @@ class Detail extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          snapshot.data['description'],
+                          snapshot.data['description']??'',
                           style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.w900,
@@ -748,7 +752,7 @@ class Detail extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child:  StreamBuilder(
-                stream: FirebaseFirestore.instance.collection('aurora rooms').doc('tu5gcNAWOh9EHYUSXS3M').snapshots(),
+                stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Text('Something went wrong');
@@ -768,7 +772,7 @@ class Detail extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          "¥${snapshot.data['budget'].toString()}",
+                          snapshot.data['budget']??'',
                           style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.w900,
@@ -793,7 +797,7 @@ class Detail extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
               ),
               child:  StreamBuilder(
-                stream: FirebaseFirestore.instance.collection('aurora rooms').doc('tu5gcNAWOh9EHYUSXS3M').snapshots(),
+                stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Text('Something went wrong');
@@ -813,7 +817,7 @@ class Detail extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            snapshot.data['contents'],
+                            snapshot.data['contents']??'',
                             style: TextStyle(
                               color: Colors.black,
                               fontWeight: FontWeight.w900,
@@ -844,7 +848,7 @@ class Detail extends StatelessWidget {
               onPressed: () async{
                 await Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) {
-                    return Top();
+                    return Top(roomname,id);
                   }),
                 );
               },
@@ -859,13 +863,16 @@ class Detail extends StatelessWidget {
 
 
 class AddRoom extends StatefulWidget {
-  AddRoom();
+  AddRoom(this.roomname);
+  String roomname;
 
   @override
-  _AddRoomState createState() => _AddRoomState();
+  _AddRoomState createState() => _AddRoomState(roomname);
 }
 
 class _AddRoomState extends State<AddRoom> {
+  _AddRoomState(this.roomname);
+  String roomname;
 
   String title = '';
   String description = '';
@@ -893,7 +900,7 @@ class _AddRoomState extends State<AddRoom> {
       onPressed: () async {
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) {
-          return Room();
+          return Room(roomname);
           }),
         );
        },
@@ -902,7 +909,7 @@ class _AddRoomState extends State<AddRoom> {
       ),
       body: Center(
         child: Container(
-          padding: EdgeInsets.all(32),
+          padding: EdgeInsets.all(30),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -976,7 +983,7 @@ class _AddRoomState extends State<AddRoom> {
                   ),
                   onPressed: () async {
                     await FirebaseFirestore.instance
-                        .collection('aurora rooms')
+                        .collection(roomname)
                         .doc()
                         .set({
                       'title': title,
@@ -997,6 +1004,9 @@ class _AddRoomState extends State<AddRoom> {
 }
 
 class Top extends StatelessWidget {
+  Top(this.roomname,this.id);
+  String roomname;
+  String id;
   @override
   Widget build(BuildContext context){
   final UserState userState = Provider.of<UserState>(context);
@@ -1031,18 +1041,24 @@ class Top extends StatelessWidget {
        ),
         backgroundColor: Colors.white,
         ),
-        body: JoinRoom(),
+        body: JoinRoom(roomname,id),
     );
   }
 }
 
 class JoinRoom extends StatefulWidget {
+      JoinRoom(this.roomname,this.id);
+  String roomname;
+  String id;
+
     @override
-  JoinRoomState createState() => JoinRoomState();
+  JoinRoomState createState() => JoinRoomState(roomname,id);
 }
 
 class JoinRoomState extends State<JoinRoom> {
-
+    JoinRoomState(this.roomname,this.id);
+    String roomname;
+  String id;
   String message = '';
 
   @override
@@ -1057,7 +1073,7 @@ class JoinRoomState extends State<JoinRoom> {
             onTap: ()async{
               await Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) {
-                  return JoinDetail();
+                  return JoinDetail(roomname,id);
                 }),
               );
             },
@@ -1071,11 +1087,11 @@ class JoinRoomState extends State<JoinRoom> {
                     opacity: 0.8,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
-                      child: Image.asset('images/aurora.jpg', fit: BoxFit.cover,)
+                      child: Image.asset('images/${roomname}.jpg', fit: BoxFit.cover,)
                     ),
                   ),
                   StreamBuilder (
-                    stream: FirebaseFirestore.instance.collection('aurora rooms').doc('tu5gcNAWOh9EHYUSXS3M').snapshots(),
+                    stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.hasError) {
                         return Text('Something went wrong');
@@ -1100,27 +1116,62 @@ class JoinRoomState extends State<JoinRoom> {
               ),
             ),
                Expanded(
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-    Container(
-              padding: EdgeInsets.all(5.0),
-              child: Text(
-                "Test",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+
+    child: StreamBuilder(
+      stream: FirebaseFirestore.instance.collection('roomname/id/messages').orderBy('date', descending: true).snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text('Something went wrong');
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Text('Loading');
+        }
+      return ListView.builder(
+        reverse: true,
+        itemCount: snapshot.data.docs.length,
+        itemBuilder: (context, index) {
+          return Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+  ),
+  child: Container(
+    padding: EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                         Text(
+            snapshot.data.docs[index].data()['date'],
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.grey
+          ),
+          ),
+           Text(
+            snapshot.data.docs[index].data()['message'],
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 15,
+            color: Colors.black,
+          ),
+          ),
+         Text(
+            snapshot.data.docs[index].data()['email'],
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.grey
+          ),
+          ),
+              ]
             ),
-             Container(
-              padding: EdgeInsets.all(5.0),
-              child: Text(
-                "Test",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
+  ),
+          );
+        },
+      );
+    },
+  ),
+
         ),
-      ),
-    ),
 SafeArea(
   child: Container(
     margin: EdgeInsets.all(20),
@@ -1148,7 +1199,7 @@ SafeArea(
                         DateTime.now().toLocal().toIso8601String(); // 現在の日時
                     final email = user.email; 
                     await FirebaseFirestore.instance
-                        .collection('aurora rooms/tu5gcNAWOh9EHYUSXS3M/messages')
+                        .collection('roomname/id/messages')
                         .doc()
                         .set({
                           'date': date,
@@ -1169,6 +1220,9 @@ SafeArea(
 }
 
 class JoinDetail extends StatelessWidget {
+      JoinDetail(this.roomname,this.id);
+      String roomname;
+  String id;
   @override
   Widget build(BuildContext context){
   return Scaffold(
@@ -1188,7 +1242,7 @@ class JoinDetail extends StatelessWidget {
       onPressed: () async {
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) {
-          return Top();
+          return Top(roomname,id);
           }),
         );
        },
@@ -1208,7 +1262,7 @@ class JoinDetail extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: StreamBuilder (
-              stream: FirebaseFirestore.instance.collection('aurora rooms').doc('tu5gcNAWOh9EHYUSXS3M').snapshots(),
+              stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Text('Something went wrong');
@@ -1252,7 +1306,7 @@ class JoinDetail extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child:  StreamBuilder(
-              stream: FirebaseFirestore.instance.collection('aurora rooms').doc('tu5gcNAWOh9EHYUSXS3M').snapshots(),
+              stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Text('Something went wrong');
@@ -1296,7 +1350,7 @@ class JoinDetail extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child:  StreamBuilder(
-                stream: FirebaseFirestore.instance.collection('aurora rooms').doc('tu5gcNAWOh9EHYUSXS3M').snapshots(),
+                stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Text('Something went wrong');
@@ -1341,7 +1395,7 @@ class JoinDetail extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
               ),
               child:  StreamBuilder(
-                stream: FirebaseFirestore.instance.collection('aurora rooms').doc('tu5gcNAWOh9EHYUSXS3M').snapshots(),
+                stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Text('Something went wrong');
