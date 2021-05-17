@@ -57,10 +57,12 @@ class _LoginCheckState extends State<LoginCheck>{
           }),
         );
     }else{
+  
       userState.setUser(currentUser);
+        DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
       Navigator.of(context).push(
         MaterialPageRoute(builder: (context) {
-          return Destination();
+          return Top(snapshot.data()['roomname'], snapshot.data()['room_id']);
         }),
       );
     }
@@ -136,10 +138,11 @@ class _BodyState extends State<Body> {
     @override
   Widget build(BuildContext context){
     final UserState userState = Provider.of<UserState>(context);
+    final User user = userState.user;
     return Container(
       padding: EdgeInsets.only(left: 30, right: 30),
       child: Column(
-        children: <Widget>[
+        children:[
           TextFormField(
             onChanged: (String value) {
               setState(() {
@@ -186,9 +189,11 @@ class _BodyState extends State<Body> {
                   password: password,
                 );
                 userState.setUser(result.user);
+                   DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+
                 await Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) {
-                    return Destination();
+                    return Top(snapshot.data()['roomname'], snapshot.data()['room_id']);
                   }),
                 );
               } catch (e) { 
@@ -217,7 +222,7 @@ class _BodyState extends State<Body> {
                 userState.setUser(result.user);
                 await Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) {
-                    return Destination();
+                    return NameSet();
                   })
                 );
               } catch (e) { 
@@ -239,6 +244,74 @@ class _BodyState extends State<Body> {
   }
 }
 
+class NameSet extends StatefulWidget {
+    @override
+  _NameSetState createState() => _NameSetState();
+}
+
+class _NameSetState extends State<NameSet> {
+    String displayName = '';
+      String error = '';
+  
+   @override
+  Widget build(BuildContext context){
+     final UserState userState = Provider.of<UserState>(context);
+    return Scaffold(
+    body: Container(
+      padding: EdgeInsets.only(left: 30, right: 30),
+      child:Center(
+      child: Column(
+        children: [
+          TextFormField(
+            onChanged: (String value) {
+              setState(() {
+              displayName = value;
+              });
+            },
+            decoration: InputDecoration(
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              labelText: 'Name',
+              border: OutlineInputBorder(
+              ),
+            ),
+          ),
+          SizedBox(height: 50),
+          TextButton(
+            style: TextButton.styleFrom(
+                backgroundColor: Colors.black,
+                padding: EdgeInsets.only(top: 15, right: 40, bottom: 15, left: 40),
+            ),
+            onPressed: () async {
+              try {
+                 final FirebaseAuth auth = FirebaseAuth.instance;
+                await auth.currentUser.updateProfile(displayName: displayName);
+                await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) {
+                    return Destination();
+                  }),
+                );
+              } catch (e) { 
+                  setState(() {
+                    error = e.toString();
+                  });
+                }
+            },
+            child: Text(
+              'Set',
+              style: TextStyle(
+                fontSize: 20,
+                color: Colors.white
+              ),
+            ),
+          ),
+        ]
+      )
+      ),
+    ),
+    );
+  
+  }
+}
 
 
 
@@ -627,6 +700,8 @@ class Detail extends StatelessWidget {
   String id;
   @override
   Widget build(BuildContext context){
+      final UserState userState = Provider.of<UserState>(context);
+  final User user = userState.user;
   return Scaffold(
     appBar: AppBar(
       title: Text(
@@ -846,6 +921,13 @@ class Detail extends StatelessWidget {
                 onPrimary: Colors.white,
               ),
               onPressed: () async{
+                                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .set({
+                          'roomname': roomname,
+                          'room_id': id,
+                        });
                 await Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) {
                     return Top(roomname,id);
@@ -1014,20 +1096,30 @@ class Top extends StatelessWidget {
 
     return Scaffold(
         appBar: AppBar(
-        title: Text(
-          'Adventure',
+                title:    StreamBuilder (
+              stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Text('Something went wrong');
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Text('Loading');
+                }
+                  return Text(
+
+          snapshot.data['title']??'',
           style: TextStyle(
             color: Colors.black
           ),
-        ),
-      leading: Container( 
-        width: 100,
-       child: TextButton(
-      child: Text(
-        'Sign Out',
-        style: TextStyle(
-          color: Colors.black,
-        ),
+        );
+              }
+                    ),
+              
+        
+      leading:IconButton(
+        icon: Icon(
+        Icons.logout,
+        color: Colors.black
       ),
       onPressed: () async {
         await FirebaseAuth.instance.signOut();
@@ -1038,7 +1130,20 @@ class Top extends StatelessWidget {
         );
        },
        ),
+        actions: [IconButton(
+        icon: Icon(
+        Icons.notes,
+        color: Colors.black
+      ),
+      onPressed: () async {
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) {
+          return JoinDetail(roomname,id);
+          }),
+        );
+       },
        ),
+       ],
         backgroundColor: Colors.white,
         ),
         body: JoinRoom(roomname,id),
@@ -1069,56 +1174,9 @@ class JoinRoomState extends State<JoinRoom> {
     return Scaffold(
       body: Column(
         children: [
-          GestureDetector( 
-            onTap: ()async{
-              await Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) {
-                  return JoinDetail(roomname,id);
-                }),
-              );
-            },
-            child: Container(
-              height: 150,
-              margin: EdgeInsets.only(top: 20, left: 20,right: 20),
-              child:Stack(
-                fit: StackFit.expand,
-                children: [
-                  Opacity(
-                    opacity: 0.8,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset('images/${roomname}.jpg', fit: BoxFit.cover,)
-                    ),
-                  ),
-                  StreamBuilder (
-                    stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Text('Something went wrong');
-                      }
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Text('Loading');
-                      }
-                        return  Center(
-                          child:  Text(
-                            snapshot.data['title'],
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 40,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ]
-                ),
-              ),
-            ),
                Expanded(
-
     child: StreamBuilder(
-      stream: FirebaseFirestore.instance.collection('roomname/id/messages').orderBy('date', descending: true).snapshots(),
+      stream: FirebaseFirestore.instance.collection('${roomname}/${id}/messages').orderBy('date', descending: true).snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Text('Something went wrong');
@@ -1141,22 +1199,23 @@ class JoinRoomState extends State<JoinRoom> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                          Text(
-            snapshot.data.docs[index].data()['date'],
+            snapshot.data.docs[index].data()['name']??'',
           style: TextStyle(
-            fontSize: 10,
+            fontWeight: FontWeight.w300,
+            fontSize: 20,
             color: Colors.grey
           ),
           ),
            Text(
-            snapshot.data.docs[index].data()['message'],
+            snapshot.data.docs[index].data()['message']??'',
           style: TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
             color: Colors.black,
           ),
           ),
          Text(
-            snapshot.data.docs[index].data()['email'],
+            snapshot.data.docs[index].data()['date']??'',
           style: TextStyle(
             fontSize: 10,
             color: Colors.grey
@@ -1195,15 +1254,14 @@ SafeArea(
         color: Colors.black
     
       ), onPressed: () async {
-                            final date =
-                        DateTime.now().toLocal().toIso8601String(); // 現在の日時
-                    final email = user.email; 
+                            final date =DateTime.now().toLocal().toIso8601String(); // 現在の日時
+                       final currentUser = await FirebaseAuth.instance.currentUser;
                     await FirebaseFirestore.instance
-                        .collection('roomname/id/messages')
+                        .collection('${roomname}/${id}/messages')
                         .doc()
                         .set({
                           'date': date,
-                          'email': email,
+                          'name': currentUser.displayName,
                       'message': _textEditingController.text,
                         });
   _textEditingController.clear();
@@ -1282,7 +1340,7 @@ class JoinDetail extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          snapshot.data['title'],
+                          snapshot.data['title']??'',
                           style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.w900,
@@ -1326,7 +1384,7 @@ class JoinDetail extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          snapshot.data['description'],
+                          snapshot.data['description']??'',
                           style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.w900,
@@ -1370,7 +1428,7 @@ class JoinDetail extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          "¥${snapshot.data['budget'].toString()}",
+                          "¥${snapshot.data['budget']??''}",
                           style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.w900,
@@ -1415,7 +1473,7 @@ class JoinDetail extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            snapshot.data['contents'],
+                            snapshot.data['contents']??'',
                             style: TextStyle(
                               color: Colors.black,
                               fontWeight: FontWeight.w900,
