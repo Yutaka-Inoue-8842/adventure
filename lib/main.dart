@@ -46,7 +46,7 @@ class LoginCheck extends StatefulWidget{
 
 class _LoginCheckState extends State<LoginCheck>{
   void checkUser() async{
-    final currentUser = await FirebaseAuth.instance.currentUser;
+    final currentUser = FirebaseAuth.instance.currentUser;
     final userState = Provider.of<UserState>(context,listen: false);
     if(currentUser == null){
         Navigator.of(context).push(
@@ -55,22 +55,30 @@ class _LoginCheckState extends State<LoginCheck>{
           }),
         );
       }else{
-        userState.setUser(currentUser);
-        DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
-        if(snapshot.data() == null ){
+        if (currentUser.displayName == null){
           Navigator.of(context).push(
             MaterialPageRoute(builder: (context) {
-              return Destination();
+              return NameSet();
             }),
           );
         }else{
           userState.setUser(currentUser);
           DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) {
-              return Top(snapshot.data()['roomname'], snapshot.data()['room_id']);
-            }),
-          );
+          if(snapshot.data() == null ){
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) {
+                return Destination();
+              }),
+            );
+          }else{
+            userState.setUser(currentUser);
+            DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) {
+                return Top(snapshot.data()['roomname'], snapshot.data()['room_id']);
+              }),
+            );
+          }
         }
       }
     }
