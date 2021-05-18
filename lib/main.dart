@@ -194,7 +194,6 @@ class _BodyState extends State<Body> {
                 );
                 userState.setUser(result.user);
                    DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-
                 await Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) {
                     return Top(snapshot.data()['roomname'], snapshot.data()['room_id']);
@@ -1278,11 +1277,85 @@ class Top extends StatelessWidget {
   Widget build(BuildContext context){
   final UserState userState = Provider.of<UserState>(context);
   final User user = userState.user;
-
     return Scaffold(
-        appBar: AppBar(
-                title:    StreamBuilder (
-              stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
+      appBar: AppBar(
+        title: StreamBuilder(
+          stream: FirebaseFirestore.instance.collection(roomname).doc(id).snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Text('Something went wrong');
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Text('Loading');
+              }
+              return Text(
+                snapshot.data['title']??'',
+                style: TextStyle(
+                  color: Colors.black
+                ),
+              );
+            }
+          ),
+          leading:IconButton(
+            icon: Icon(
+              Icons.logout,
+              color: Colors.black
+            ),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              await Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) {
+                  return Login();
+                }),
+              );
+            },
+          ),
+          actions: [
+            IconButton(
+              icon: Icon(
+                Icons.notes,
+                color: Colors.black
+              ),
+              onPressed: () async {
+                await Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) {
+                    return JoinDetail(roomname,id);
+                  }),
+                );
+              },
+            ),
+          ],
+        backgroundColor: Colors.white,
+      ),
+      body: JoinRoom(roomname,id),
+    );
+  }
+}
+
+class JoinRoom extends StatefulWidget {
+  JoinRoom(this.roomname,this.id);
+  String roomname;
+  String id;
+  @override
+  JoinRoomState createState() => JoinRoomState(roomname,id);
+}
+
+class JoinRoomState extends State<JoinRoom> {
+  JoinRoomState(this.roomname,this.id);
+  String roomname;
+  String id;
+  String message = '';
+  @override
+  Widget build(BuildContext context) {
+    final UserState userState = Provider.of<UserState>(context);
+    final User user = userState.user;
+    final TextEditingController _textEditingController = new TextEditingController();
+    return Scaffold(
+      body: Column(
+        children: [
+          Expanded(
+            child: StreamBuilder(
+              stream: FirebaseFirestore.instance.collection('${roomname}/${id}/messages').orderBy('date', descending: true).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Text('Something went wrong');
@@ -1290,172 +1363,92 @@ class Top extends StatelessWidget {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Text('Loading');
                 }
-                  return Text(
-
-          snapshot.data['title']??'',
-          style: TextStyle(
-            color: Colors.black
-          ),
-        );
-              }
-                    ),
-              
-        
-      leading:IconButton(
-        icon: Icon(
-        Icons.logout,
-        color: Colors.black
-      ),
-      onPressed: () async {
-        await FirebaseAuth.instance.signOut();
-      await Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) {
-          return Login();
-          }),
-        );
-       },
-       ),
-        actions: [IconButton(
-        icon: Icon(
-        Icons.notes,
-        color: Colors.black
-      ),
-      onPressed: () async {
-      await Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) {
-          return JoinDetail(roomname,id);
-          }),
-        );
-       },
-       ),
-       ],
-        backgroundColor: Colors.white,
-        ),
-        body: JoinRoom(roomname,id),
-    );
-  }
-}
-
-class JoinRoom extends StatefulWidget {
-      JoinRoom(this.roomname,this.id);
-  String roomname;
-  String id;
-
-    @override
-  JoinRoomState createState() => JoinRoomState(roomname,id);
-}
-
-class JoinRoomState extends State<JoinRoom> {
-    JoinRoomState(this.roomname,this.id);
-    String roomname;
-  String id;
-  String message = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final UserState userState = Provider.of<UserState>(context);
-    final User user = userState.user;
-      final TextEditingController _textEditingController = new TextEditingController();
-    return Scaffold(
-      body: Column(
-        children: [
-               Expanded(
-    child: StreamBuilder(
-      stream: FirebaseFirestore.instance.collection('${roomname}/${id}/messages').orderBy('date', descending: true).snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Text('Something went wrong');
-        }
-
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Text('Loading');
-        }
-      return ListView.builder(
-        reverse: true,
-        itemCount: snapshot.data.docs.length,
-        itemBuilder: (context, index) {
-          return Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-  ),
-  child: Container(
-    padding: EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                         Text(
-            snapshot.data.docs[index].data()['name']??'',
-          style: TextStyle(
-            fontWeight: FontWeight.w300,
-            fontSize: 20,
-            color: Colors.grey
-          ),
-          ),
-           Text(
-            snapshot.data.docs[index].data()['message']??'',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-            color: Colors.black,
-          ),
-          ),
-         Text(
-            snapshot.data.docs[index].data()['date']??'',
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey
-          ),
-          ),
-              ]
+                return ListView.builder(
+                  reverse: true,
+                  itemCount: snapshot.data.docs.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Container(
+                        padding: EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              snapshot.data.docs[index].data()['name']??'',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w300,
+                                fontSize: 20,
+                                color: Colors.grey
+                              ),
+                            ),
+                            Text(
+                              snapshot.data.docs[index].data()['message']??'',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 20,
+                                color: Colors.black,
+                              ),
+                            ),
+                            Text(
+                              snapshot.data.docs[index].data()['date']??'',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey
+                              ),
+                            ),
+                          ]
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-  ),
-          );
-        },
-      );
-    },
-  ),
-
-        ),
-SafeArea(
-  child: Container(
-    margin: EdgeInsets.all(20),
-    child: Row(
-      children: [
-         Flexible(
-    child: TextField(
-    controller: _textEditingController,
-      autofocus: true,
-      style: TextStyle(
-        fontSize: 20.0,
-        color: Colors.black,
-      ),
-      decoration: InputDecoration(
-        hintText: 'Message',
-      ),
-    ),
-         ),
-    IconButton(      icon: Icon(
-        Icons.send,
-        color: Colors.black
-    
-      ), onPressed: () async {
-                            final date =DateTime.now().toLocal().toIso8601String(); // 現在の日時
-                       final currentUser = await FirebaseAuth.instance.currentUser;
-                    await FirebaseFirestore.instance
+          ),
+          SafeArea(
+            child: Container(
+              margin: EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: TextField(
+                      controller: _textEditingController,
+                      autofocus: true,
+                      style: TextStyle(
+                        fontSize: 20.0,
+                        color: Colors.black,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Message',
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.send,
+                    color: Colors.black
+                  ),
+                  onPressed: () async {
+                    final date =DateTime.now().toLocal().toIso8601String(); // 現在の日時
+                    final currentUser = await FirebaseAuth.instance.currentUser;
+                      await FirebaseFirestore.instance
                         .collection('${roomname}/${id}/messages')
                         .doc()
                         .set({
                           'date': date,
                           'name': currentUser.displayName,
-                      'message': _textEditingController.text,
+                          'message': _textEditingController.text,
                         });
-  _textEditingController.clear();
-      }
-      )
-    ]
-    ),
-  ),
-),
+                      _textEditingController.clear();
+                    }
+                  )
+                ]
+              ),
+            ),
+          ),
         ]
       ),
     );
@@ -1467,8 +1460,8 @@ SafeArea(
 //↓参加した部屋の詳細ページ↓
 
 class JoinDetail extends StatelessWidget {
-      JoinDetail(this.roomname,this.id);
-      String roomname;
+  JoinDetail(this.roomname,this.id);
+  String roomname;
   String id;
   @override
   Widget build(BuildContext context){
@@ -1494,6 +1487,21 @@ class JoinDetail extends StatelessWidget {
         );
        },
       ),
+      actions: [
+        IconButton(
+          icon: Icon(
+            Icons.edit,
+            color: Colors.black
+          ),
+          onPressed: () async {
+            await Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) {
+                return Top(roomname,id);
+              }),
+            );
+          },
+        ),
+      ],
     ),
     body: SafeArea(
       child: Column(
