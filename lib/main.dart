@@ -45,7 +45,7 @@ class LoginCheck extends StatefulWidget{
 }
 
 class _LoginCheckState extends State<LoginCheck>{
-  void checkUser() async{
+  void checkUser()async{
     final currentUser = FirebaseAuth.instance.currentUser;
     final userState = Provider.of<UserState>(context,listen: false);
     if(currentUser == null){
@@ -196,17 +196,21 @@ class _BodyState extends State<Body> {
             onPressed: () async {
               try {
                 final FirebaseAuth auth = FirebaseAuth.instance;
-                final result = await auth.signInWithEmailAndPassword(
+                final result =  await auth.signInWithEmailAndPassword(
                   email: email,
                   password: password,
                 );
-                userState.setUser(result.user);
-                   DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-                await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) {
-                    return Top(snapshot.data()['roomname'], snapshot.data()['room_id']);
-                  }),
-                );
+
+                final currentUser = FirebaseAuth.instance.currentUser;
+                userState.setUser(currentUser);
+                DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+                Future(() {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) {
+                      return Top(snapshot.data()['roomname'], snapshot.data()['room_id']);
+                    }),
+                  );
+                });
               } catch (e) { 
                   setState(() {
                     error = e.toString();
@@ -1488,7 +1492,7 @@ class JoinDetail extends StatelessWidget {
         color: Colors.black
       ),
       onPressed: () async {
-      await Navigator.of(context).pushReplacement(
+      await Navigator.of(context).push(
         MaterialPageRoute(builder: (context) {
           return Top(roomname,id);
           }),
@@ -1502,9 +1506,10 @@ class JoinDetail extends StatelessWidget {
             color: Colors.black
           ),
           onPressed: () async {
-            await Navigator.of(context).pushReplacement(
+            DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection(roomname).doc(id).get();
+            await Navigator.of(context).push(
               MaterialPageRoute(builder: (context) {
-                return Top(roomname,id);
+                return EditDetail(roomname,id,snapshot.data()['title'],snapshot.data()['description'],snapshot.data()['budget'],snapshot.data()['contents']);
               }),
             );
           },
@@ -1699,4 +1704,136 @@ class JoinDetail extends StatelessWidget {
   }
 }
 
-//↑参加した部屋の詳細ページ↑ï
+//↑参加した部屋の詳細ページ↑
+
+class EditDetail extends StatefulWidget {
+  EditDetail(this.roomname,this.id,this.title,this.description,this.budget,this.contents);
+  String roomname;
+  String id;
+  String title;
+  String description;
+  String budget;
+  String contents;
+  @override
+  _EditDetailState createState() => _EditDetailState(roomname,id,title,description,budget,contents);
+}
+
+class _EditDetailState extends State<EditDetail> {
+  _EditDetailState(this.roomname,this.id,this.title,this.description,this.budget,this.contents);
+  String roomname;
+  String id;
+  String title;
+  String description;
+  String budget;
+  String contents;
+
+  @override
+  Widget build(BuildContext context) {
+    final UserState userState = Provider.of<UserState>(context);
+    final User user = userState.user;
+    final  controllerTitle = TextEditingController(text: title);
+    final controllerDescription = TextEditingController(text: description);
+    final controllerBudget = TextEditingController(text: budget);
+    final controllerContents = TextEditingController(text: contents);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'EditDetail',
+          style: TextStyle(
+            color: Colors.black
+          ),
+        ),
+        leading: IconButton(
+      icon: Icon(
+        Icons.close,
+        color: Colors.black
+      ),
+      onPressed: () async {
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) {
+          return Top(roomname,id);
+          }),
+        );
+       },
+      ),
+      backgroundColor: Colors.white,
+      ),
+      body: Center(
+        child: Container(
+          padding: EdgeInsets.all(30),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextFormField(
+                controller: controllerTitle,
+                decoration: InputDecoration(
+                  labelText: 'Title',
+                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                  border: OutlineInputBorder(
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: controllerDescription,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                  border: OutlineInputBorder(
+                  ),
+                ),
+                keyboardType: TextInputType.multiline,
+                maxLines: 2,
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: controllerBudget,
+                decoration: InputDecoration(
+                  labelText: 'Budget',
+                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                  border: OutlineInputBorder(
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: controllerContents,
+                decoration: InputDecoration(
+                  labelText: 'Contents',
+                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                  border: OutlineInputBorder(
+                  ),
+                ),
+                keyboardType: TextInputType.multiline,
+                maxLines: 15,
+              ),
+              const SizedBox(height: 15),
+              Container(
+                width: double.infinity,
+                child: ElevatedButton(
+                  child: Text('Edit'),
+                  style: ElevatedButton.styleFrom(
+                    primary: Colors.black,
+                    onPrimary: Colors.white,
+                  ),
+                  onPressed: () async {
+               await FirebaseFirestore.instance
+                    .collection(roomname)
+                    .doc(id)
+                    .update({
+                      'title': controllerTitle.text,
+                      'description': controllerDescription.text,
+                      'budget': controllerBudget.text,
+                      'contents': controllerContents.text
+                    });
+                    Navigator.of(context).pop();
+                  },
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
