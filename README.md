@@ -34,6 +34,8 @@ Adventure
   - 交通手段の手配
   - 言語に対する不安
 
+# 洗い出した要件
+- https://docs.google.com/spreadsheets/d/1ptD_lHr12gVQJV_pjUgENGp4ooPhLYcCM2RrN6xcjZE/edit?usp=sharing
 
 # 使用技術
 - Flutter version 2.0.6
