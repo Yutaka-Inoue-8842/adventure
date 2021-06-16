@@ -7,29 +7,29 @@ Adventure
 # 利用方法
   ↓email,passwordを設定しユーザー登録
 
-  [![Image from Gyazo](https://i.gyazo.com/563e681772ff4937dadac365d045bcac.png)](https://gyazo.com/563e681772ff4937dadac365d045bcac)
+  <img src="https://i.gyazo.com/563e681772ff4937dadac365d045bcac.png" width="200px">
   
 
   ↓名前を決める
 
-  [![Image from Gyazo](https://i.gyazo.com/6eae078b8ecf64c7cd444542ac60e3e5.png)](https://gyazo.com/6eae078b8ecf64c7cd444542ac60e3e5)
+  <img src="https://i.gyazo.com/6eae078b8ecf64c7cd444542ac60e3e5.png" width="200px">
   
   
   ↓行き先の選択（ジャンル）
 
-  [![Image from Gyazo](https://i.gyazo.com/e8d68714c63b4462e5a8427ca2df8894.jpg)](https://gyazo.com/e8d68714c63b4462e5a8427ca2df8894)
+   <img src="https://i.gyazo.com/e8d68714c63b4462e5a8427ca2df8894.jpg" width="200px">
   
   ↓ジャンルに類する部屋の一覧から選択
 
-  [![Image from Gyazo](https://i.gyazo.com/ce0e8cfeab46ad66fd089f228a96a08c.png)](https://gyazo.com/ce0e8cfeab46ad66fd089f228a96a08c)
+  <img src="https://i.gyazo.com/ce0e8cfeab46ad66fd089f228a96a08c.png" width="200px">
   
   ↓詳細が表示され内容がよければ参加を押す
 
-  [![Image from Gyazo](https://i.gyazo.com/d64412917dfae95ccf38c27d732443a9.png)](https://gyazo.com/d64412917dfae95ccf38c27d732443a9)
+  <img src="https://i.gyazo.com/d64412917dfae95ccf38c27d732443a9.png" width="200px">
   
   ↓その部屋のチャットルームが開くのでコミュニケーションを取り決行する。
 
-  [![Image from Gyazo](https://i.gyazo.com/662f69d8e59617ff438e15bb828fd400.png)](https://gyazo.com/662f69d8e59617ff438e15bb828fd400)
+  <img src="https://i.gyazo.com/662f69d8e59617ff438e15bb828fd400.png" width="200px">
 
 
   - 部屋一覧で部屋作成することもできる。
